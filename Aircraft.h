@@ -3,7 +3,7 @@
 #include <random>
 #include "ChargingStation.h"
 
-//enumeration for the different states of the eVTOL
+//eVTOL State Machine
 enum class eVTOLState {
     IDLE,
     FLYING,
@@ -11,6 +11,8 @@ enum class eVTOLState {
     CHARGING
 };
 
+
+//Vehicle Types
 enum class eVTOLCompany {
     ALPHA,
     BRAVO,
@@ -106,6 +108,13 @@ public:
         }
 
         eVTOLState SimulateFlight(int SimTime){
+            /*TODO:
+                Fault model that has different severity levels
+                P0: Most Critical Fault(Last-Man Standing) - eVTOL is grounded for remainder of simulation
+                P1: Critical Fault - 5 faults to trigger aircraft being grounded
+                P2: Moderate Fault - Just keep track of the number of faults
+            
+            */
             if(FaultTriggered())
                 totalFaults++;
             
@@ -124,7 +133,7 @@ public:
 
                         state = eVTOLState::WAITING_FOR_CHARGER;
                         assignedCharger = FindCharger(eVTOL_ID);
-                        std::cout<<"eVTOL "<<eVTOL_ID<<" is waiting for charger "<<assignedCharger<<std::endl;
+                        //std::cout<<"eVTOL "<<eVTOL_ID<<" is waiting for charger "<<assignedCharger<<std::endl;
 
                     }
                     break;
@@ -157,6 +166,7 @@ public:
 
         int FindCharger(int ID){
             //Pick charger with the least number of waiting aircrafts
+            //TODO: Algorithm to take into account the total charge time of aircrafts in the queue to optimize assigning a charger
             int chargerA = stations[0].WaitingAircrafts.size();
             int chargerB = stations[1].WaitingAircrafts.size();
             int chargerC = stations[2].WaitingAircrafts.size();
@@ -167,16 +177,15 @@ public:
         }
 
         void Cruise(){
-            avgDistance += static_cast<float>(cruiseSpeed/60.0); 
-            std::cout<<"eVTOL "<<eVTOL_ID<<" is cruising at "<<cruiseSpeed<<" mph\t"<<"Distance: "<<avgDistance<<std::endl;
-            energyConsumed += static_cast<float>(EnergyConsumption*(cruiseSpeed/60));
-            SOC -= static_cast<float>(EnergyConsumption*(cruiseSpeed/60));
-            std::cout<<"eVTOL "<<eVTOL_ID<<" has "<<SOC<<" SOC"<<std::endl;
-            passengerMiles += PassengerCount*static_cast<float>(cruiseSpeed/60); 
+            float CruiseDist = cruiseSpeed/60.0;
+            avgDistance += CruiseDist; 
+            //std::cout<<"eVTOL "<<eVTOL_ID<<" is cruising at "<<cruiseSpeed<<" mph\t"<<"Distance: "<<avgDistance<<std::endl;
+            energyConsumed += static_cast<float>(EnergyConsumption*CruiseDist);
+            SOC -= EnergyConsumption*CruiseDist;
+            //std::cout<<"eVTOL "<<eVTOL_ID<<" has "<<SOC<<" SOC"<<std::endl;
+            passengerMiles += PassengerCount*CruiseDist; 
             avgFlightTime++;
         }
-
-
 
         ~eVTOL()=default;
  

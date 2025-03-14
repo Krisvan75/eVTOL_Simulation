@@ -4,17 +4,12 @@
 #include <map>
 #include "eVTOL_Sim.h"
 
-
+//Made the number of eVTOLs dynamic if needed to changed number of eVTOLs in the simulation
 #define NUM_EVTOLS 20
+
+//Simulation time in minutes for simplicity, Will be changed to use a real-time clock in the future with an acceleration factor
 #define SIMULATION_TIME 180
 
-std::unordered_map<int,std::string> eVTOL_Translate = {
-    {0,"ALPHA"},
-    {1,"BRAVO"},
-    {2,"CHARLIE"},
-    {3,"DELTA"},
-    {4,"ECHO"}
-};
 
 
 int main(){
@@ -33,21 +28,24 @@ int main(){
 
     //Start of Simulation loop, each iteration represents 1 minute
     while(CurrentTime < SIMULATION_TIME){
-        std::cout<<"Time: "<<CurrentTime<<std::endl;
+        //std::cout<<"Time: "<<CurrentTime<<std::endl;
         for(int i=0; i<NUM_EVTOLS; i++){
             eVTOLState out = eVTOLs[i].SimulateFlight(CurrentTime);
-            if(i==0)
-                std::cout<<"eVTOL ID: "<<i<<" State: "<<static_cast<int>(out)<<"\tDist:"<<eVTOLs[i].avgDistance<<std::endl;
+            WriteSimLog(eVTOLs[i],CurrentTime);
         }
         for(int i=0; i<3; i++){
             stations[i].ChargeAircraft();
+            stations[i].WriteChargerLog(CurrentTime);
         }
         CurrentTime++;
     }
 
+    //End of Simulation loop, reporting results
+    WriteResultsToFile(eVTOLs);
+    /*
     for(auto ele : eVTOL_MasterList){
         std::cout<<"eVTOL Type: "<<eVTOL_Translate[static_cast<int>(ele.first)]<<std::endl;
-        std::cout<<"eVTOL IDs: ";
+        std::cout<<"eVTOL IDs:"<<std::endl;
         for(auto id : ele.second){
             std::cout<<id<<":"<<std::endl;
             std::cout<<"Total Flights: "<<eVTOLs[id].TotalFlights<<std::endl;
@@ -59,6 +57,7 @@ int main(){
 
         std::cout<<"****************************************************"<<std::endl;
     }
+ */
 
 
 
