@@ -1,12 +1,14 @@
-
+#include<cmath>
+#include <iostream>
+#include <random>
+#include "ChargingStation.h"
 
 //enumeration for the different states of the eVTOL
 enum class eVTOLState {
     IDLE,
     FLYING,
     WAITING_FOR_CHARGER,
-    CHARGING,
-    FAULTED
+    CHARGING
 };
 
 enum class eVTOLCompany {
@@ -37,53 +39,139 @@ private:
         float TimetoCharge;
         float EnergyConsumption;
         int PassengerCount;
-        int FaultRate;
-        eVTOLState state;
-        eVTOLCompany Model;
+        float FaultRate;
+
+
 public:  
         //eVTOL statistics
+        int eVTOL_ID;
         float avgFlightTime;
         float avgDistance;
         float avgChargeTime;
         int totalFaults;
         int passengerMiles;
+        int TotalFlights;
+        eVTOLState state;
+        eVTOLCompany Model;
+
+        //variables to keep track of the current flight
+        float currentdistance, energyConsumed;
+        int currentFlightTime;
+        int SOC;
+        int assignedCharger;
+
+
+        eVTOL()=default;
   
     
-        eVTOL(eVTOLCompany model){
+        void ClassifyeVTOL(eVTOLCompany model, int EVTOL_ID){
 
             switch(model){
                 case eVTOLCompany::ALPHA:
-                    cruiseSpeed = 100; batteryCapacity = 100; TimetoCharge = 60; 
-                    EnergyConsumption = 1.5; PassengerCount = 4; FaultRate = 5; 
+                    cruiseSpeed = 120; batteryCapacity = 320; TimetoCharge = 36; 
+                    EnergyConsumption = 1.6; PassengerCount = 4; FaultRate = 0.25; 
                     break;
 
                 case eVTOLCompany::BRAVO:
-                    cruiseSpeed = 120; batteryCapacity = 120; TimetoCharge = 50; 
-                    EnergyConsumption = 1.2; PassengerCount = 6; FaultRate = 4;
+                    cruiseSpeed = 100; batteryCapacity = 100; TimetoCharge = 12; 
+                    EnergyConsumption = 1.5; PassengerCount = 5; FaultRate = 0.10;
                     break;
 
                 case eVTOLCompany::CHARLIE:
-                    cruiseSpeed = 150; batteryCapacity = 150; TimetoCharge = 40; 
-                    EnergyConsumption = 1.0; PassengerCount = 8; FaultRate = 3;
+                    cruiseSpeed = 160; batteryCapacity = 220; TimetoCharge = 48; 
+                    EnergyConsumption = 2.2; PassengerCount = 3; FaultRate = 0.05;
                     break;
 
                 case eVTOLCompany::DELTA:
-                    cruiseSpeed = 180; batteryCapacity = 180; TimetoCharge = 30; 
-                    EnergyConsumption = 0.8; PassengerCount = 10; FaultRate = 2;
+                    cruiseSpeed = 90; batteryCapacity = 120; TimetoCharge = 37.2; 
+                    EnergyConsumption = 0.8; PassengerCount = 2; FaultRate = 0.22;
                     break;
+
                 case eVTOLCompany::ECHO:
-                    cruiseSpeed = 200; batteryCapacity = 200; TimetoCharge = 20; 
-                    EnergyConsumption = 0.6; PassengerCount = 12; FaultRate = 1; 
+                    cruiseSpeed = 30; batteryCapacity = 150; TimetoCharge = 18; 
+                    EnergyConsumption = 5.8; PassengerCount = 2; FaultRate = 0.61; 
                     break;
 
             }
             Model = model;
             state = eVTOLState::IDLE;
+            eVTOL_ID = EVTOL_ID;
+            SOC = batteryCapacity;
             avgFlightTime = 0;
             avgDistance = 0;
             avgChargeTime = 0;
             totalFaults = 0;
             passengerMiles = 0;
+            TotalFlights = 0;
+        }
+
+        eVTOLState SimulateFlight(int SimTime){
+            if(FaultTriggered())
+                totalFaults++;
+            
+            switch(state){
+                case eVTOLState::IDLE:
+                    state = eVTOLState::FLYING;
+                    TotalFlights++;
+                    break;
+
+                case eVTOLState::FLYING:
+                    
+                    if(SOC>=0){
+                        Cruise();
+                    }
+                    else{
+
+                        state = eVTOLState::WAITING_FOR_CHARGER;
+                        assignedCharger = FindCharger(eVTOL_ID);
+                        std::cout<<"eVTOL "<<eVTOL_ID<<" is waiting for charger "<<assignedCharger<<std::endl;
+
+                    }
+                    break;
+
+                case eVTOLState::WAITING_FOR_CHARGER:
+                    if(stations[assignedCharger].getAircraftOnCharger() == eVTOL_ID){
+                        state = eVTOLState::CHARGING;
+                    }
+                    break;
+                case eVTOLState::CHARGING:
+                    if(stations[assignedCharger].getAircraftOnCharger() != eVTOL_ID || stations[assignedCharger].state == ChargingStationState::IDLE){
+                        SOC = batteryCapacity;
+                        state = eVTOLState::IDLE;
+                    }
+                    
+                    break;
+            }
+            return state;
+        }
+        bool FaultTriggered(){
+            double faultProbPerMin = 1.0 - std::pow(1.0 - FaultRate, 1.0/60.0);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dist(0.0, 1.0);
+            if(dist(gen) < faultProbPerMin){
+                return true;
+            }
+            return false;
+        }
+
+        int FindCharger(int ID){
+            //Pick charger with the least number of waiting aircrafts
+            int chargerA = stations[0].WaitingAircrafts.size();
+            int chargerB = stations[1].WaitingAircrafts.size();
+            int chargerC = stations[2].WaitingAircrafts.size();
+            int charger = chargerA<chargerB ? 
+            (chargerA<chargerC ? stations[0].AddAircrafttoQueue(ID, TimetoCharge) : stations[2].AddAircrafttoQueue(ID, TimetoCharge)) : 
+            (chargerB<chargerC ? stations[1].AddAircrafttoQueue(ID, TimetoCharge) : stations[2].AddAircrafttoQueue(ID, TimetoCharge));
+            return charger;
+        }
+
+        void Cruise(){
+            avgDistance += cruiseSpeed/60; 
+            energyConsumed += EnergyConsumption*(cruiseSpeed/60);
+            SOC -= energyConsumed;
+            passengerMiles += PassengerCount*(cruiseSpeed/60); 
+            avgFlightTime++;
         }
 
 
