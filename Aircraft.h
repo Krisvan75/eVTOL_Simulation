@@ -34,7 +34,7 @@ enum class eVTOLCompany {
 class eVTOL {
 private:
         //Attributes of the eVTOL
-        int cruiseSpeed;
+        float cruiseSpeed;
         int batteryCapacity;
         float TimetoCharge;
         float EnergyConsumption;
@@ -49,7 +49,7 @@ public:
         float avgDistance;
         float avgChargeTime;
         int totalFaults;
-        int passengerMiles;
+        float passengerMiles;
         int TotalFlights;
         eVTOLState state;
         eVTOLCompany Model;
@@ -57,7 +57,7 @@ public:
         //variables to keep track of the current flight
         float currentdistance, energyConsumed;
         int currentFlightTime;
-        int SOC;
+        float SOC;
         int assignedCharger;
 
 
@@ -167,10 +167,12 @@ public:
         }
 
         void Cruise(){
-            avgDistance += cruiseSpeed/60; 
-            energyConsumed += EnergyConsumption*(cruiseSpeed/60);
-            SOC -= energyConsumed;
-            passengerMiles += PassengerCount*(cruiseSpeed/60); 
+            avgDistance += static_cast<float>(cruiseSpeed/60.0); 
+            std::cout<<"eVTOL "<<eVTOL_ID<<" is cruising at "<<cruiseSpeed<<" mph\t"<<"Distance: "<<avgDistance<<std::endl;
+            energyConsumed += static_cast<float>(EnergyConsumption*(cruiseSpeed/60));
+            SOC -= static_cast<float>(EnergyConsumption*(cruiseSpeed/60));
+            std::cout<<"eVTOL "<<eVTOL_ID<<" has "<<SOC<<" SOC"<<std::endl;
+            passengerMiles += PassengerCount*static_cast<float>(cruiseSpeed/60); 
             avgFlightTime++;
         }
 

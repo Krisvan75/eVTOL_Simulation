@@ -15,3 +15,4 @@ std::vector<eVTOLCompany> Generate_eVTOL_Vehicles(int numVehicles){
     }
     return eVTOL_IDs;
 }
+

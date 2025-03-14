@@ -1,4 +1,5 @@
 #include <queue>
+#include <iostream>
 
 enum class ChargingStationState{
     IDLE,
@@ -26,7 +27,7 @@ public:
     }
 
     void ChargeAircraft(){
-        if(WaitingAircrafts.empty()){
+        if(WaitingAircrafts.empty()&& state == ChargingStationState::IDLE){
             return;
         }
         if(!WaitingAircrafts.empty() && state == ChargingStationState::IDLE){
@@ -36,6 +37,12 @@ public:
             WaitingAircrafts.pop();
             state = ChargingStationState::BUSY;
             chargeTime--;
+            std::cout<<"eVTOL "<<aircraft.first<<" is charging at station "<<StationID<<std::endl;
+        }
+        if(state==ChargingStationState::BUSY){
+            chargeTime--;
+            std::cout<<"eVTOL "<<AircraftOnCharger<<" is charging at station "<<StationID<<std::endl;
+            std::cout<<"Charge Time Remaining: "<<chargeTime<<std::endl;
         }
         if(chargeTime <= 0){
             state = ChargingStationState::IDLE;
