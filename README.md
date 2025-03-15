@@ -53,7 +53,5 @@ Average Distance: 68.3333 Miles
 Average Charge Time: 11 Minutes
 Total Faults: 1
 Passenger Miles: 2050
-'''
-
 
 
