@@ -4,6 +4,7 @@
 #include <map>
 #include "eVTOL_Sim.h"
 
+
 //Made the number of eVTOLs dynamic if needed to changed number of eVTOLs in the simulation
 #define NUM_EVTOLS 20
 
@@ -31,7 +32,7 @@ int main(){
         //std::cout<<"Time: "<<CurrentTime<<std::endl;
         for(int i=0; i<NUM_EVTOLS; i++){
             eVTOLState out = eVTOLs[i].SimulateFlight(CurrentTime);
-            WriteSimLog(eVTOLs[i],CurrentTime);
+            //WriteSimLog(eVTOLs[i],CurrentTime);
         }
         for(int i=0; i<3; i++){
             stations[i].ChargeAircraft();
@@ -42,24 +43,23 @@ int main(){
 
     //End of Simulation loop, reporting results
     WriteResultsToFile(eVTOLs);
-    /*
-    for(auto ele : eVTOL_MasterList){
-        std::cout<<"eVTOL Type: "<<eVTOL_Translate[static_cast<int>(ele.first)]<<std::endl;
-        std::cout<<"eVTOL IDs:"<<std::endl;
-        for(auto id : ele.second){
-            std::cout<<id<<":"<<std::endl;
-            std::cout<<"Total Flights: "<<eVTOLs[id].TotalFlights<<std::endl;
-            std::cout<<"Total Faults: "<<eVTOLs[id].totalFaults<<std::endl;
-            std::cout<<"Total Passenger Miles: "<<eVTOLs[id].passengerMiles<<std::endl;
-            std::cout<<"Average Flight Time: "<<eVTOLs[id].avgFlightTime<<std::endl;
-            std::cout<<"Average Distance: "<<eVTOLs[id].avgDistance<<std::endl;
+
+    for(auto vehicleType : eVTOL_MasterList){
+        float OverallAvgFlightTime=0;
+        float OverallAvgDistance=0;
+        float OverallAvgChargeTime=0;
+        int TotalFaults=0;
+        float OverallPassengerMiles=0;
+        for(auto ID : vehicleType.second){
+            OverallAvgFlightTime += (eVTOLs[ID].avgFlightTime/eVTOLs[ID].TotalFlights)/vehicleType.second.size();
+            OverallAvgDistance += (eVTOLs[ID].avgDistance/eVTOLs[ID].TotalFlights)/vehicleType.second.size();
+            OverallAvgChargeTime += (eVTOLs[ID].avgChargeTime/eVTOLs[ID].ChargingSessions)/vehicleType.second.size();
+            TotalFaults += eVTOLs[ID].totalFaults;
+            OverallPassengerMiles += eVTOLs[ID].passengerMiles;
         }
+        WriteOverallData(static_cast<int>(vehicleType.first),OverallAvgFlightTime,OverallAvgDistance,OverallAvgChargeTime,TotalFaults,OverallPassengerMiles);
 
-        std::cout<<"****************************************************"<<std::endl;
     }
- */
-
-
 
     return 0;
 }

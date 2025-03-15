@@ -61,6 +61,7 @@ public:
         int currentFlightTime;
         float SOC;
         int assignedCharger;
+        int ChargingSessions;
 
 
         eVTOL()=default;
@@ -105,6 +106,8 @@ public:
             totalFaults = 0;
             passengerMiles = 0;
             TotalFlights = 0;
+            ChargingSessions=0;
+
         }
 
         eVTOLState SimulateFlight(int SimTime){
@@ -141,12 +144,17 @@ public:
                 case eVTOLState::WAITING_FOR_CHARGER:
                     if(stations[assignedCharger].getAircraftOnCharger() == eVTOL_ID){
                         state = eVTOLState::CHARGING;
+                        ChargingSessions++;
+                        avgChargeTime++;
                     }
                     break;
                 case eVTOLState::CHARGING:
                     if(stations[assignedCharger].getAircraftOnCharger() != eVTOL_ID || stations[assignedCharger].state == ChargingStationState::IDLE){
                         SOC = batteryCapacity;
                         state = eVTOLState::IDLE;
+                    }
+                    else{
+                        avgChargeTime++;
                     }
                     
                     break;
@@ -167,9 +175,9 @@ public:
         int FindCharger(int ID){
             //Pick charger with the least number of waiting aircrafts
             //TODO: Algorithm to take into account the total charge time of aircrafts in the queue to optimize assigning a charger
-            int chargerA = stations[0].WaitingAircrafts.size();
-            int chargerB = stations[1].WaitingAircrafts.size();
-            int chargerC = stations[2].WaitingAircrafts.size();
+            int chargerA = stations[0].waitTime;
+            int chargerB = stations[1].waitTime;
+            int chargerC = stations[2].waitTime;
             int charger = chargerA<chargerB ? 
             (chargerA<chargerC ? stations[0].AddAircrafttoQueue(ID, TimetoCharge) : stations[2].AddAircrafttoQueue(ID, TimetoCharge)) : 
             (chargerB<chargerC ? stations[1].AddAircrafttoQueue(ID, TimetoCharge) : stations[2].AddAircrafttoQueue(ID, TimetoCharge));

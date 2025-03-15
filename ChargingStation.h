@@ -13,16 +13,19 @@ public:
     float chargeTime;
     ChargingStationState state;
     int AircraftOnCharger;
+    int waitTime;
 
     ChargingStation(int stationID){
         StationID = stationID;
         chargeTime = 0;
         state = ChargingStationState::IDLE;
+        waitTime = 0;
 
     }
 
     int AddAircrafttoQueue(int eVTOL_ID, float chargeTime){
         WaitingAircrafts.push(std::make_pair(eVTOL_ID,chargeTime));
+        waitTime += chargeTime;
         return StationID;
     }
 
@@ -30,19 +33,17 @@ public:
         if(WaitingAircrafts.empty()&& state == ChargingStationState::IDLE){
             return;
         }
-        if(!WaitingAircrafts.empty() && state == ChargingStationState::IDLE){
-            std::pair<int,float> aircraft = WaitingAircrafts.front();
-            AircraftOnCharger = aircraft.first;
-            chargeTime = aircraft.second;
-            WaitingAircrafts.pop();
-            state = ChargingStationState::BUSY;
+        if(!WaitingAircrafts.empty()){
+            if(state == ChargingStationState::IDLE){
+                std::pair<int,float> aircraft = WaitingAircrafts.front();
+                AircraftOnCharger = aircraft.first;
+                chargeTime = aircraft.second;
+                WaitingAircrafts.pop();
+                state = ChargingStationState::BUSY;
+            }
             chargeTime--;
+            waitTime--;
             //std::cout<<"eVTOL "<<aircraft.first<<" is charging at station "<<StationID<<std::endl;
-        }
-        if(state==ChargingStationState::BUSY){
-            chargeTime--;
-            //std::cout<<"eVTOL "<<AircraftOnCharger<<" is charging at station "<<StationID<<std::endl;
-            //std::cout<<"Charge Time Remaining: "<<chargeTime<<std::endl;
         }
         if(chargeTime <= 0){
             state = ChargingStationState::IDLE;
@@ -56,6 +57,7 @@ public:
         file<<"State: "<<(state == ChargingStationState::IDLE ? "IDLE" : "BUSY")<<std::endl;
         file<<"Aircraft on Charger: "<<AircraftOnCharger<<std::endl;
         file<<"Number of Aircrafts in Queue: "<<WaitingAircrafts.size()<<std::endl;
+        file<<"Wait Time: "<<waitTime<<" Minutes"<<std::endl;
         file<<"****************************************************"<<std::endl;
         file.close();
     }
@@ -63,6 +65,8 @@ public:
     int getAircraftOnCharger(){
         return AircraftOnCharger;
     }
+
+    ~ChargingStation()=default;
 
 };
 
